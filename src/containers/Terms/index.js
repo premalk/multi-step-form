@@ -1,8 +1,16 @@
 import { useFormContext, Controller } from "react-hook-form";
 import { Checkbox, Row, Col } from "antd";
+import { useEffect, useState } from "react";
 
 const Terms = () => {
-  const { control } = useFormContext();
+  const { control, setValue } = useFormContext();
+  const [checked, setChecked] = useState(false);
+
+  const onChecked = () => setChecked(!checked);
+
+  useEffect(() => {
+    setValue("acknowledgement", checked);
+  }, [checked]);
 
   return (
     <Row>
@@ -11,7 +19,11 @@ const Terms = () => {
           name="acknowledgement"
           control={control}
           render={() => (
-            <Checkbox style={{ marginTop: "30px", marginBottom: "10px" }}>
+            <Checkbox
+              style={{ marginTop: "30px", marginBottom: "10px" }}
+              checked={checked}
+              onChange={onChecked}
+            >
               Terms & conditions
             </Checkbox>
           )}

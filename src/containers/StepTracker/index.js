@@ -16,18 +16,31 @@ import RecordVoice from "../RecordVoice";
 import Password from "../Password";
 import Terms from "../Terms";
 
+import useUserDetails from "../../hooks/useUserDetails";
+
 const phoneRegExp =
   /^((\\+[1-9]{1,4}[ \\-]*)|(\\([0-9]{2,3}\\)[ \\-]*)|([0-9]{2,4})[ \\-]*)*?[0-9]{3,4}?[ \\-]*[0-9]{3,4}?$/;
 
-const schema = yup
-  .object({
+const schema = [
+  yup.object({
     email: yup.string().email().required("Enter valid email"),
     name: yup.string().required("Enter valid name"),
     number: yup.string().matches(phoneRegExp, "Mobile number is not valid"),
-    //password: yup.string().required("Enter valid password"),
-    //confirmPassword: yup.string().required("Enter valid confirm password"),
-  })
-  .required();
+  }),
+
+  yup.object({
+    audio: yup.object().required("Record a audio"),
+  }),
+  yup.object({
+    password: yup.string().required("Enter valid password"),
+    confirmPassword: yup
+      .string()
+      .oneOf([yup.ref("password"), null], "Passwords must match"),
+  }),
+  yup.object({
+    acknowledgement: yup.boolean().oneOf([true], "Accept terms & conditions."),
+  }),
+];
 
 const { Step } = Steps;
 
@@ -57,9 +70,20 @@ const steps = [
 const StepTracker = () => {
   const [current, setCurrent] = React.useState(0);
 
-  const formFields = useForm({ resolver: yupResolver(schema) });
+  const currentValidationSchema = schema[current];
 
-  const next = () => {
+  const formFields = useForm({
+    resolver: yupResolver(currentValidationSchema),
+  });
+  const { mutate } = useUserDetails();
+
+  const next = (data) => {
+    console.log(data);
+    if (current === steps.length - 1) {
+      mutate({ data });
+      message.success("Processing complete!");
+      return;
+    }
     setCurrent(current + 1);
   };
 
@@ -85,19 +109,9 @@ const StepTracker = () => {
             }}
           >
             {current > 0 && <Button onClick={() => prev()}>Previous</Button>}
-            {current === steps.length - 1 && (
-              <Button
-                type="primary"
-                onClick={() => message.success("Processing complete!")}
-              >
-                Done
-              </Button>
-            )}
-            {current < steps.length - 1 && (
-              <Button type="primary" onClick={formFields.handleSubmit(next)}>
-                Next
-              </Button>
-            )}
+            <Button type="primary" onClick={formFields.handleSubmit(next)}>
+              {current === steps.length - 1 ? "Done" : "Next"}
+            </Button>
           </div>
         </Col>
       </Row>
